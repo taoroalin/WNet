@@ -1,0 +1,18 @@
+python3 train.py --input_folder "images/train" --output_folder="output"
+add epoch argument. They use it on the git example but its missing in the code.
+
+https://medium.com/secure-and-private-ai-writing-challenge/loading-image-using-pytorch-c2e2dcce6ef2
+
+
+pip install helper
+pip install torchvision
+
+Datasets want a subdirectory with each directory containing images related to that class. so directory dog -> dog images, directory cat -> cat images.
+But we dont have this kind of problem. So we have to get a work around.
+
+Since W-net is based on U-net, I tried to look at this source:
+https://towardsdatascience.com/creating-and-training-a-u-net-model-with-pytorch-for-2d-3d-semantic-segmentation-dataset-fb1f7f80fe55
+Straight of the bat he mentions he will not use torchvision, but i think its because he also want to support 3d datasets. Which we dont have to worry about.
+
+But it did give me the idea to look at people training u-net since W-net is the same thing.
+https://medium.com/coinmonks/learn-how-to-train-u-net-on-your-dataset-8e3f89fbd623
