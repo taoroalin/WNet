@@ -16,9 +16,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torchvision import datasets, transforms
-import helper
 
 import WNet
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='PyTorch Unsupervised Segmentation with WNet')
 parser.add_argument('--in_Chans', metavar='C', default=3, type=int, 
@@ -69,18 +69,38 @@ def test():
     synthetic_data=torch.rand((1, 3, 128, 128))
     optimizer=torch.optim.SGD(wnet.parameters(), 0.001)
     train_op(wnet, optimizer, synthetic_data)
-    
+
+def show_image(image):
+    img = image.numpy().transpose((1, 2, 0))
+    plt.imshow(img)
+    plt.show()
+
 def main():
     args = parser.parse_args()
+
+    wnet = WNet.WNet(args.squeeze)
+    optimizer = torch.optim.SGD(wnet.parameters(), lr=0.0001)
+    
     transform = transforms.Compose([transforms.Resize(255),
-                                 transforms.CenterCrop(224),
-                                 transforms.ToTensor()])
-    dataset = datasets.ImageFolder(args.input_folder, transform) #not needed i think bc images are all the same size
+                                transforms.CenterCrop(224),
+                                transforms.ToTensor()])
+    dataset = datasets.ImageFolder(args.input_folder, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
-    images, labels = next(iter(dataloader))
-    helper.imshow(images[0], normalize=False)
-    # dataset = datasets.ImageFolder(args.input_folder)
+    
+    # images, labels = next(iter(dataloader))
+    # show_image(images[0])
+    
+    # iterate thru training data e times
+    for epoch in range(args.epochs):
+        print("Epoch = " + str(epoch))
+        for (idx, batch) in enumerate(dataloader):
+            print(idx)
+            # batch consists of images and labels.
+            wnet = train_op(wnet, optimizer, batch[0])
 
 
 if __name__ == '__main__':
     main()
+
+
+# python .\train.py --e 2 --input_folder="data/images/train/tiff" --output_folder="/output/"
