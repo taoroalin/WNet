@@ -45,8 +45,8 @@ horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1],
 def gradient_regularization(softmax, device='cuda'):
     vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
     hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
-    print('vert', torch.sum(vert))
-    print('hori', torch.sum(hori))
+    # print('vert', torch.sum(vert))
+    # print('hori', torch.sum(hori))
     mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
     mean=torch.mean(mag)
     return mean
@@ -54,7 +54,7 @@ def gradient_regularization(softmax, device='cuda'):
 def train_op(model, optimizer, input, psi=0.5):
     enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction. K seems to be 32 for us
     # enc.shape (K, squeeze, Height, Width)
-    print(enc.detach().numpy().shape)
+    # print(enc.detach().numpy().shape)
     n_cut_loss=gradient_regularization(enc)*psi
     n_cut_loss.backward()
     optimizer.step()
@@ -89,22 +89,27 @@ def main():
     transform = transforms.Compose([transforms.Resize((64, 64)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True)
     
-    # images, labels = next(iter(dataloader))
+    images, labels = next(iter(dataloader))
     # show_image(images[0])
     
     # iterate thru training data e times
     for epoch in range(args.epochs):
         print("Epoch = " + str(epoch))
         for (idx, batch) in enumerate(dataloader):
-            print(idx)
             # batch consists of images and labels.
             wnet = train_op(wnet, optimizer, batch[0])
+
+    enc, dec = wnet(next(iter(dataloader))[0])
+    print(next(iter(dataloader))[0].shape)
+    print(enc.shape)
+    print(dec.shape)
+    show_image(dec[0, :, :, :].detach())
 
 
 if __name__ == '__main__':
     main()
 
 
-# python .\train.py --e 2 --input_folder="data/images/train" --output_folder="/output/"
+# python .\train.py --e 100 --input_folder="data/images/train" --output_folder="/output/"
