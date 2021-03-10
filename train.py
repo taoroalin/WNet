@@ -13,6 +13,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+import matplotlib.pyplot as plt
+import torch
+from torchvision import datasets, transforms
+import helper
+
 import WNet
 
 parser = argparse.ArgumentParser(description='PyTorch Unsupervised Segmentation with WNet')
@@ -22,6 +27,8 @@ parser.add_argument('--squeeze', metavar='K', default=4, type=int,
                     help='Depth of squeeze layer')
 parser.add_argument('--out_Chans', metavar='O', default=3, type=int, 
                     help='Output Channels')
+parser.add_argument('--epochs', metavar='e', default=100, type=int, 
+                    help='epochs')
 parser.add_argument('--input_folder', metavar='f', default=None, type=str, 
                     help='Folder of input images')
 parser.add_argument('--output_folder', metavar='of', default=None, type=str, 
@@ -29,11 +36,11 @@ parser.add_argument('--output_folder', metavar='of', default=None, type=str,
 
 vertical_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,  0,  -1], 
                                             [1,  0,  -1], 
-                                            [1,  0,  -1]]]])).float().cuda(), requires_grad=False)
+                                            [1,  0,  -1]]]])).float(), requires_grad=False)
 
 horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1], 
                                               [0,   0,  0], 
-                                              [-1 ,-1, -1]]]])).float().cuda(), requires_grad=False)
+                                              [-1 ,-1, -1]]]])).float(), requires_grad=False)
 
 def gradient_regularization(softmax, device='cuda'):
     vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
@@ -59,11 +66,21 @@ def train_op(model, optimizer, input, psi=0.5):
 
 def test():
     wnet=WNet.WNet(4)
-    wnet=wnet.cuda()
-    synthetic_data=torch.rand((1, 3, 128, 128)).cuda()
+    synthetic_data=torch.rand((1, 3, 128, 128))
     optimizer=torch.optim.SGD(wnet.parameters(), 0.001)
     train_op(wnet, optimizer, synthetic_data)
     
 def main():
     args = parser.parse_args()
-    
+    transform = transforms.Compose([transforms.Resize(255),
+                                 transforms.CenterCrop(224),
+                                 transforms.ToTensor()])
+    dataset = datasets.ImageFolder(args.input_folder, transform) #not needed i think bc images are all the same size
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+    images, labels = next(iter(dataloader))
+    helper.imshow(images[0], normalize=False)
+    # dataset = datasets.ImageFolder(args.input_folder)
+
+
+if __name__ == '__main__':
+    main()
