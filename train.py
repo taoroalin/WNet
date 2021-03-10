@@ -52,7 +52,9 @@ def gradient_regularization(softmax, device='cuda'):
     return mean
 
 def train_op(model, optimizer, input, psi=0.5):
-    enc = model(input, returns='enc')
+    enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction. K seems to be 32 for us
+    # enc.shape (K, squeeze, Height, Width)
+    print(enc.detach().numpy().shape)
     n_cut_loss=gradient_regularization(enc)*psi
     n_cut_loss.backward()
     optimizer.step()
@@ -78,14 +80,16 @@ def show_image(image):
 def main():
     args = parser.parse_args()
 
+
+    # Works with squeeze = 128,
     wnet = WNet.WNet(args.squeeze)
     optimizer = torch.optim.SGD(wnet.parameters(), lr=0.0001)
     
-    transform = transforms.Compose([transforms.Resize(255),
-                                transforms.CenterCrop(224),
+    # transforms.CenterCrop(224),
+    transform = transforms.Compose([transforms.Resize((64, 64)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
     
     # images, labels = next(iter(dataloader))
     # show_image(images[0])
@@ -103,4 +107,4 @@ if __name__ == '__main__':
     main()
 
 
-# python .\train.py --e 2 --input_folder="data/images/train/tiff" --output_folder="/output/"
+# python .\train.py --e 2 --input_folder="data/images/train" --output_folder="/output/"
