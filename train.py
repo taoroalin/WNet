@@ -86,14 +86,14 @@ def main():
     optimizer = torch.optim.SGD(wnet.parameters(), lr=0.0001)
     
     # transforms.CenterCrop(224),
-    transform = transforms.Compose([transforms.Resize((64, 64)),
+    transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True)
     
     images, labels = next(iter(dataloader))
-    # show_image(images[0])
-    
+    show_image(images[0])
+
     # iterate thru training data e times
     for epoch in range(args.epochs):
         print("Epoch = " + str(epoch))
@@ -105,7 +105,16 @@ def main():
     print(next(iter(dataloader))[0].shape)
     print(enc.shape)
     print(dec.shape)
-    show_image(dec[0, :, :, :].detach())
+    show_image(enc[0, :, :, :].detach())
+    segment1 = enc[0, 0, :, :].detach()
+    segment2 = enc[0, 1, :, :].detach()
+    segment3 = enc[0, 2, :, :].detach()
+    segment4 = enc[0, 3, :, :].detach()
+    torch.save(segment1, 'segment1.pt')
+    torch.save(segment2, 'segment2.pt')
+    torch.save(segment3, 'segment3.pt')
+    torch.save(segment4, 'segment4.pt')
+
 
 
 if __name__ == '__main__':
