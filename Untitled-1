@@ -16,3 +16,65 @@ Straight of the bat he mentions he will not use torchvision, but i think its bec
 
 But it did give me the idea to look at people training u-net since W-net is the same thing.
 https://medium.com/coinmonks/learn-how-to-train-u-net-on-your-dataset-8e3f89fbd623
+
+https://sergilehkyi.com/image-segmentation-with-python/
+
+https://www.researchgate.net/post/How-can-i-export-groundtruth-object-from-matlab-to-python
+
+https://nl.mathworks.com/help/vision/ug/getting-started-with-semantic-segmentation-using-deep-learning.html
+
+
+Plan right now. Create a loop, single images, train the network on it for a cetrain epoch like 100.
+Use the groundtruth matlab files to calculate the loss.
+
+
+How to train using dataloader:
+https://visualstudiomagazine.com/articles/2020/09/10/pytorch-dataloader.aspx
+
+
+What I have so far,
+Implemented a loop which goes through the imagesets in batches, it does this e times.
+Creating the Wnet with the default squeeze value, which is 4, gives errors on the gradient_regularization
+It only starts working when the squeeze is atleast 32.
+The gradient_regularization uses the Uenc output as parameter.
+According to the paper, "The output of the UEnc is a normalized 224 × 224 × K dense prediction."
+But the code returns: [32, 4, 64, 64], For image size 64X64, squeeze 4, and 32 the batch size of the images.
+So the squeeze cant be more than the batch size. I opted to change the batch_size to 4.
+
+training seems to work. Want to know how to validate. 
+So I recuded the epochs to 1 and the dataset size to 2 to see how I can test the end model.
+Doing this = enc, dec = wnet(images[0], returns='both')
+Gives me this = RuntimeError: Expected 4-dimensional input for 4-dimensional weight [64, 3, 3, 3], but got 3-dimensional input of size [3, 64, 64] instead
+
+Which is weird since this is what he does in train_op.
+Figured out it was because I missed the batch size. Adding this it gives me:
+input image -> torch.Size([4, 3, 64, 64])
+Uenc output -> torch.Size([4, 4, 64, 64])
+Udec output -> torch.Size([4, 3, 64, 64])
+I should be able to reassemble the Udec image.
+
+Code I used to on e = 2, dataset size = 8
+    enc, dec = wnet(next(iter(dataloader))[0])
+    print(next(iter(dataloader))[0].shape)
+    print(enc.shape)
+    print(dec.shape)
+    show_image(dec[0, :, :, :].detach())
+
+Trying to get the hidden output with the red outline on the image. Noticed the loss is an empty array each time. Both the ncut loss and the rec loss.
+
+I think I was wrong that the squeeze cant be more than the batch. Since the squeeze should be amount of classes inside of a image.
+Have to look into the squeeze more, creating a batch approach the method gradient_regularization is not doing what we expect.
+For now I just leave it as is.
+
+
+
+In the paper they mention:
+
+They train on a different dataset so I downloaded that one. Have to look if they do any preprocessing.
+
+They also mention their parameters: 
+
+We train the networks from scratch using mini-batches of 10 images, with an initial learning rate of 0.003.
+The  learning  rate  is  divided  by  ten  after  every  1,000  it-erations.   
+The  training  is  stopped  after  50,000  iterations.
+Dropout  of  0.65  was  added  to  prevent  overfitting  duringtraining. 

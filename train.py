@@ -43,18 +43,16 @@ horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1],
                                               [-1 ,-1, -1]]]])).float(), requires_grad=False)
 
 def gradient_regularization(softmax, device='cuda'):
-    vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
-    hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
+    vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[1])], 1)
+    hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[1])], 1)
     # print('vert', torch.sum(vert))
     # print('hori', torch.sum(hori))
     mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
     mean=torch.mean(mag)
     return mean
-
+    
 def train_op(model, optimizer, input, psi=0.5):
-    enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction. K seems to be 32 for us
-    # enc.shape (K, squeeze, Height, Width)
-    # print(enc.detach().numpy().shape)
+    enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction.
     n_cut_loss=gradient_regularization(enc)*psi
     n_cut_loss.backward()
     optimizer.step()
@@ -83,30 +81,36 @@ def main():
 
     # Works with squeeze = 128,
     wnet = WNet.WNet(args.squeeze)
-    optimizer = torch.optim.SGD(wnet.parameters(), lr=0.0001)
+    learning_rate = 0.003
+    dropout = 0.65
+    optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
     
     # transforms.CenterCrop(224),
     transform = transforms.Compose([transforms.Resize((64, 64)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True)
     
     images, labels = next(iter(dataloader))
     # show_image(images[0])
     
     # iterate thru training data e times
     for epoch in range(args.epochs):
+        if (epoch % 1000 == 0):
+            learning_rate = learning_rate/10
         print("Epoch = " + str(epoch))
         for (idx, batch) in enumerate(dataloader):
             # batch consists of images and labels.
-            wnet = train_op(wnet, optimizer, batch[0])
+            wnet = train_op(wnet, optimizer, batch[0], dropout)
 
-    enc, dec = wnet(next(iter(dataloader))[0])
-    print(next(iter(dataloader))[0].shape)
-    print(enc.shape)
-    print(dec.shape)
+    images, labels = next(iter(dataloader))
+    enc, dec = wnet(images)
+    # print(images.shape)
+    # print(enc.shape)
+    # print(dec.shape)
+    show_image(images[0])
+    show_image(enc[0, :, :, :].detach())
     show_image(dec[0, :, :, :].detach())
-
 
 if __name__ == '__main__':
     main()
