@@ -100,6 +100,8 @@ def main():
             learning_rate = learning_rate/10
         print("Epoch = " + str(epoch))
         for (idx, batch) in enumerate(dataloader):
+            if( idx >= 50): break
+            print(idx)
             # batch consists of images and labels.
             wnet = train_op(wnet, optimizer, batch[0], dropout)
 
@@ -111,6 +113,9 @@ def main():
     show_image(images[0])
     show_image(enc[0, :, :, :].detach())
     show_image(dec[0, :, :, :].detach())
+
+
+    torch.save(wnet.state_dict(), "model")
 
 if __name__ == '__main__':
     main()
