@@ -62,7 +62,7 @@ def train_op(model, optimizer, input, psi=0.5):
     rec_loss.backward()
     optimizer.step()
     optimizer.zero_grad()
-    return model
+    return (model, n_cut_loss, rec_loss)
 
 def test():
     wnet=WNet.WNet(4)
@@ -78,7 +78,8 @@ def show_image(image):
 def main():
     args = parser.parse_args()
 
-
+    n_cut_losses = []
+    rec_losses = []
     # Works with squeeze = 128,
     wnet = WNet.WNet(args.squeeze)
     learning_rate = 0.003
@@ -100,25 +101,25 @@ def main():
             learning_rate = learning_rate/10
         print("Epoch = " + str(epoch))
         for (idx, batch) in enumerate(dataloader):
-            if( idx >= 50): break
+            if( idx >= 2): break
             print(idx)
             # batch consists of images and labels.
-            wnet = train_op(wnet, optimizer, batch[0], dropout)
+            wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], dropout)
+            n_cut_losses.append(n_cut_loss.detach())
+            rec_losses.append(rec_loss.detach())
 
     images, labels = next(iter(dataloader))
     enc, dec = wnet(images)
     # print(images.shape)
     # print(enc.shape)
     # print(dec.shape)
-    show_image(images[0])
-    show_image(enc[0, :, :, :].detach())
-    show_image(dec[0, :, :, :].detach())
-
 
     torch.save(wnet.state_dict(), "model")
+    np.save("rec_losses", rec_losses)
+    np.save("n_cut_losses", n_cut_losses)
 
 if __name__ == '__main__':
     main()
 
 
-# python .\train.py --e 100 --input_folder="data/images/train" --output_folder="/output/"
+# python .\train.py --e 100 --input_folder="data/images/" --output_folder="/output/"
