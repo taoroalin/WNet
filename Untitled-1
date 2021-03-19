@@ -78,3 +78,14 @@ We train the networks from scratch using mini-batches of 10 images, with an init
 The  learning  rate  is  divided  by  ten  after  every  1,000  it-erations.   
 The  training  is  stopped  after  50,000  iterations.
 Dropout  of  0.65  was  added  to  prevent  overfitting  duringtraining. 
+
+
+Tried to see if their implementation matches the paper. Noticed 2 things:
+The enc gets called twice before the dec.
+And the input to the dec doesnt seem to be the right dimension. Its not H X W X K, since K = 4 but when looking at the shape it returns 3.
+Gonna have to investigate both of thse points.
+One thing to maybe change to help it is:
+dec = model(input, returns='dec') -> dec = model(enc, returns='dec')
+But this the error:
+RuntimeError: Given groups=1, weight of size [64, 3, 3, 3], expected input[10, 4, 64, 64] to have 3 channels, but got 4 channels instead
+So either I am wrong using the output of enc as the input of dec or I am wrong about what the input is specificly.
