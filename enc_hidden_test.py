@@ -16,7 +16,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import torch
 from torchvision import datasets, transforms
-
+from scipy.special import softmax
 import WNet
 import matplotlib.pyplot as plt
 
@@ -31,6 +31,12 @@ parser.add_argument('--squeeze', metavar='K', default=4, type=int,
 def show_image(image):
     img = image.numpy().transpose((1, 2, 0))
     plt.imshow(img)
+    plt.show()
+
+def show_gray(image):
+    image = image.numpy()
+    arr = np.asarray(image)
+    plt.imshow(arr, cmap='gray', vmin=0, vmax=1)
     plt.show()
     
 def main():
@@ -47,12 +53,15 @@ def main():
     x = transform(image)[None, :, :, :]
 
     enc, dec = model(x)
-    show_image(x[0])
-    show_image(enc[0, :1, :, :].detach())
-    show_image(dec[0, :, :, :].detach())
+    segment_lines = enc[0, 0, :, :].detach() + enc[0, 1, :, :].detach() + enc[0, 2, :, :].detach() + enc[0, 3, :, :].detach()
+    segment_lines = (segment_lines > 0).float() * 1
+    RGB = np.array((*"RGB",))
+    red = np.multiply.outer(segment_lines, RGB=='R').transpose((2, 0, 1))
+    show_gray(segment_lines)
+    show_image(x[0] + (red))
 
 if __name__ == '__main__':
     main()
 
 
-# python .\predict.py --image="data/images/test/2018.jpg"
+# python .\enc_hidden_test.py --image="data/JPEGImages/2008_006002.jpg"
