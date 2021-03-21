@@ -101,8 +101,6 @@ def main():
             learning_rate = learning_rate/10
         print("Epoch = " + str(epoch))
         for (idx, batch) in enumerate(dataloader):
-            if( idx >= 2): break
-            print(idx)
             # batch consists of images and labels.
             wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], dropout)
             n_cut_losses.append(n_cut_loss.detach())
