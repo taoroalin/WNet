@@ -23,7 +23,7 @@ for i in range(amountClasses):
     class_map[np.where(image_values==np.max(image_values))] = 1
 
     # Plot the image with different colors for distinct values 
-    ax = sns.heatmap(image_values, cmap="binary")
+    ax = sns.heatmap(image_values, cmap="bi")
     # Plot the pixels with max values
     # ax = sns.heatmap(class_map)
 
