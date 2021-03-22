@@ -78,14 +78,15 @@ def show_image(image):
 def main():
     args = parser.parse_args()
 
-    n_cut_losses = []
-    rec_losses = []
-    # Works with squeeze = 128,
+    
+
+    n_cut_losses_avg = []
+    rec_losses_avg = []
+
     wnet = WNet.WNet(args.squeeze)
-    learning_rate = 0.003
+    learning_rate = 0.0003
     dropout = 0.65
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
-    
     # transforms.CenterCrop(224),
     transform = transforms.Compose([transforms.Resize((64, 64)),
                                 transforms.ToTensor()])
@@ -99,12 +100,18 @@ def main():
     for epoch in range(args.epochs):
         if (epoch % 1000 == 0):
             learning_rate = learning_rate/10
+            optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
         print("Epoch = " + str(epoch))
+
+        n_cut_losses = []
+        rec_losses = []
         for (idx, batch) in enumerate(dataloader):
-            # batch consists of images and labels.
             wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], dropout)
             n_cut_losses.append(n_cut_loss.detach())
             rec_losses.append(rec_loss.detach())
+        n_cut_losses_avg.append(np.average(n_cut_losses))
+        rec_losses_avg.append(np.average(rec_losses))
+
 
     images, labels = next(iter(dataloader))
     enc, dec = wnet(images)
@@ -113,8 +120,8 @@ def main():
     # print(dec.shape)
 
     torch.save(wnet.state_dict(), "model")
-    np.save("rec_losses", rec_losses)
-    np.save("n_cut_losses", n_cut_losses)
+    np.save("rec_losses", n_cut_losses_avg)
+    np.save("n_cut_losses", rec_losses_avg)
 
 if __name__ == '__main__':
     main()
