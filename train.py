@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-
+import time
 import matplotlib.pyplot as plt
 import torch
 from torchvision import datasets, transforms
@@ -36,20 +36,22 @@ parser.add_argument('--output_folder', metavar='of', default=None, type=str,
 
 vertical_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,  0,  -1], 
                                             [1,  0,  -1], 
-                                            [1,  0,  -1]]]])).float(), requires_grad=False)
+                                            [1,  0,  -1]]]])).float().cuda(), requires_grad=False)
 
 horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1], 
                                               [0,   0,  0], 
-                                              [-1 ,-1, -1]]]])).float(), requires_grad=False)
+                                              [-1 ,-1, -1]]]])).float().cuda(), requires_grad=False)
+
 
 def gradient_regularization(softmax, device='cuda'):
-    vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[1])], 1)
-    hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[1])], 1)
+    vert=torch.cat([F.conv2d(softmax.cuda()[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[1])], 1)
+    hori=torch.cat([F.conv2d(softmax.cuda()[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[1])], 1)
     # print('vert', torch.sum(vert))
     # print('hori', torch.sum(hori))
     mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
     mean=torch.mean(mag)
     return mean
+
     
 def train_op(model, optimizer, input, psi=0.5):
     enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction.
@@ -67,7 +69,7 @@ def train_op(model, optimizer, input, psi=0.5):
 def test():
     wnet=WNet.WNet(4)
     synthetic_data=torch.rand((1, 3, 128, 128))
-    optimizer=torch.optim.SGD(wnet.parameters(), 0.001)
+    optimizer=torch.optim.SGD(wnet.parameters(), 0.001).cuda()
     train_op(wnet, optimizer, synthetic_data)
 
 def show_image(image):
@@ -76,27 +78,22 @@ def show_image(image):
     plt.show()
 
 def main():
-    args = parser.parse_args()
-
-    
+    args, unknown = parser.parse_known_args()
 
     n_cut_losses_avg = []
     rec_losses_avg = []
 
     wnet = WNet.WNet(args.squeeze)
-    learning_rate = 0.0003
-    dropout = 0.65
+    wnet = wnet.cuda()
+    learning_rate = 0.003
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
     # transforms.CenterCrop(224),
     transform = transforms.Compose([transforms.Resize((64, 64)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True)
+                                          
     
-    images, labels = next(iter(dataloader))
-    # show_image(images[0])
-    
-    # iterate thru training data e times
     for epoch in range(args.epochs):
         if (epoch % 1000 == 0):
             learning_rate = learning_rate/10
@@ -105,16 +102,19 @@ def main():
 
         n_cut_losses = []
         rec_losses = []
+        start_time = time.time()
         for (idx, batch) in enumerate(dataloader):
-            wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], dropout)
+            if(idx>=50): break;
+            wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0].cuda())
             n_cut_losses.append(n_cut_loss.detach())
             rec_losses.append(rec_loss.detach())
-        n_cut_losses_avg.append(np.average(n_cut_losses))
-        rec_losses_avg.append(np.average(rec_losses))
+        n_cut_losses_avg.append(torch.mean(torch.FloatTensor(n_cut_losses)))
+        rec_losses_avg.append(torch.mean(torch.FloatTensor(rec_losses)))
+        print("--- %s seconds ---" % (time.time() - start_time))
 
 
     images, labels = next(iter(dataloader))
-    enc, dec = wnet(images)
+    enc, dec = wnet(images.cuda())
     # print(images.shape)
     # print(enc.shape)
     # print(dec.shape)
@@ -122,6 +122,7 @@ def main():
     torch.save(wnet.state_dict(), "model")
     np.save("rec_losses", n_cut_losses_avg)
     np.save("n_cut_losses", rec_losses_avg)
+    print("Done")
 
 if __name__ == '__main__':
     main()
