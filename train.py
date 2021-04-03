@@ -16,6 +16,7 @@ import time
 import matplotlib.pyplot as plt
 import torch
 from torchvision import datasets, transforms
+from soft_n_cut_loss import soft_n_cut_loss
 
 import WNet
 import matplotlib.pyplot as plt
@@ -42,29 +43,26 @@ horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1],
                                               [0,   0,  0], 
                                               [-1 ,-1, -1]]]])).float().cuda(), requires_grad=False)
 
-
-def gradient_regularization(softmax, device='cuda'):
-    vert=torch.cat([F.conv2d(softmax.cuda()[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[1])], 1)
-    hori=torch.cat([F.conv2d(softmax.cuda()[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[1])], 1)
-    # print('vert', torch.sum(vert))
-    # print('hori', torch.sum(hori))
-    mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
-    mean=torch.mean(mag)
-    return mean
-
     
 def train_op(model, optimizer, input, psi=0.5):
     enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction.
-    n_cut_loss=gradient_regularization(enc)*psi
-    n_cut_loss.backward()
+    n_cut_loss=soft_n_cut_loss(input, enc)
+    n_cut_loss.backward() 
     optimizer.step()
     optimizer.zero_grad()
     dec = model(input, returns='dec')
-    rec_loss=torch.mean(torch.pow(torch.pow(input, 2) + torch.pow(dec, 2), 0.5))*(1-psi)
+    rec_loss=reconstruction_loss(input, dec)
     rec_loss.backward()
     optimizer.step()
     optimizer.zero_grad()
     return (model, n_cut_loss, rec_loss)
+
+def reconstruction_loss(x, x_prime):
+    # binary_cross_entropy = F.binary_cross_entropy(x_prime, x, reduction='sum')
+    # return binary_cross_entropy
+    criterionIdt = torch.nn.L1Loss() #prob l2 or mseless here
+    rec_loss = criterionIdt(x_prime, x)
+    return rec_loss
 
 def test():
     wnet=WNet.WNet(4)
@@ -82,8 +80,8 @@ def main():
 
     n_cut_losses_avg = []
     rec_losses_avg = []
-
-    wnet = WNet.WNet(args.squeeze)
+    k = args.squeeze
+    wnet = WNet.WNet(k)
     wnet = wnet.cuda()
     learning_rate = 0.003
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
@@ -104,7 +102,7 @@ def main():
         rec_losses = []
         start_time = time.time()
         for (idx, batch) in enumerate(dataloader):
-            if(idx>=50): break;
+            if(idx > 50): break
             wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0].cuda())
             n_cut_losses.append(n_cut_loss.detach())
             rec_losses.append(rec_loss.detach())

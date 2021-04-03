@@ -54,11 +54,9 @@ def main():
 
     enc, dec = model(x)
     segment_lines = enc[0, 0, :, :].detach() + enc[0, 1, :, :].detach() + enc[0, 2, :, :].detach() + enc[0, 3, :, :].detach()
-    segment_lines = 1- ((segment_lines > 0).float() * 1)
-    RGB = np.array((*"RGB",))
-    red = np.multiply.outer(segment_lines, RGB=='R').transpose((2, 0, 1))
-    show_gray(segment_lines)
-    show_image(x[0] + (red))
+    show_image(torch.softmax(enc[0, :,:,:], dim=0).detach())
+    show_image(x[0])
+    show_image(dec[0, :, :, :].detach())
 
 if __name__ == '__main__':
     main()
