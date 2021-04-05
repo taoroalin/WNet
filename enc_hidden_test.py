@@ -54,8 +54,8 @@ def main():
 
     enc, dec = model(x)
     segment_lines = enc[0, 0, :, :].detach() + enc[0, 1, :, :].detach() + enc[0, 2, :, :].detach() + enc[0, 3, :, :].detach()
-    show_image(torch.softmax(enc[0, :,:,:], dim=0).detach())
     show_image(x[0])
+    show_image(enc[0, :,:,:].detach())
     show_image(dec[0, :, :, :].detach())
 
 if __name__ == '__main__':

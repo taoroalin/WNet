@@ -45,8 +45,9 @@ horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1],
 
     
 def train_op(model, optimizer, input, psi=0.5):
+    softmax = nn.Softmax2d()
     enc = model(input, returns='enc') # The output of the UEnc is a normalized 224 × 224 × K dense prediction.
-    n_cut_loss=soft_n_cut_loss(input, enc)
+    n_cut_loss=soft_n_cut_loss(input, softmax(enc))
     n_cut_loss.backward() 
     optimizer.step()
     optimizer.zero_grad()
@@ -83,7 +84,7 @@ def main():
     k = args.squeeze
     wnet = WNet.WNet(k)
     wnet = wnet.cuda()
-    learning_rate = 0.003
+    learning_rate = 0.03
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
     # transforms.CenterCrop(224),
     transform = transforms.Compose([transforms.Resize((64, 64)),
