@@ -31,14 +31,22 @@ class Block(nn.Module):
             self.conv1=nn.Conv2d(in_filters, out_filters, kernel_size=3, padding=1)
             self.conv2=nn.Conv2d(out_filters, out_filters, kernel_size=3, padding=1)
         
+        
+        self.relu1 = nn.ReLU()
+        self.dropout1 = nn.Dropout(0.15) 
         self.batchnorm1=nn.BatchNorm2d(out_filters)
+        
+        self.relu2 = nn.ReLU()
+        self.dropout2 = nn.Dropout(0.15) 
         self.batchnorm2=nn.BatchNorm2d(out_filters)
 
     def forward(self, x):
-        
-        x=self.batchnorm1(self.conv1(x)).clamp(0)
-        
-        x=self.batchnorm2(self.conv2(x)).clamp(0)
+        x = self.batchnorm1(self.conv1(x)).clamp(0)
+        x = self.relu1(x)
+        x = self.dropout1(x)
+        x = self.batchnorm2(self.conv2(x)).clamp(0)
+        x = self.relu2(x)
+        x = self.dropout2(x)
         
         return x
 
