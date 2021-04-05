@@ -25,7 +25,7 @@ parser.add_argument('--model', metavar='C', default="model", type=str,
                     help='name of the saved model')
 parser.add_argument('--image', metavar='C', default=None, type=str, 
                     help='path to the image')
-parser.add_argument('--squeeze', metavar='K', default=4, type=int, 
+parser.add_argument('--squeeze', metavar='K', default=20, type=int, 
                     help='Depth of squeeze layer')
 
 def show_image(image):
@@ -55,7 +55,7 @@ def main():
     enc, dec = model(x)
     segment_lines = enc[0, 0, :, :].detach() + enc[0, 1, :, :].detach() + enc[0, 2, :, :].detach() + enc[0, 3, :, :].detach()
     show_image(x[0])
-    show_image(enc[0, :,:,:].detach())
+    show_image(torch.argmax(enc[:, :,:,:], dim=1))
     show_image(dec[0, :, :, :].detach())
 
 if __name__ == '__main__':
