@@ -18,12 +18,12 @@ print("Amount of pixel columns" + str(pix_columns))
 
 # for every class plot the segmentation
 for i in range(amountClasses): 
-    image_values = x['groundTruth'][0][i]['Segmentation'][0][0]
+    image_values = x['groundTruth'][0][i]['Boundaries'][0][0]
     class_map = np.zeros_like(image_values)
     class_map[np.where(image_values==np.max(image_values))] = 1
 
     # Plot the image with different colors for distinct values 
-    ax = sns.heatmap(image_values, cmap="rainbow")
+    ax = sns.heatmap(image_values, cmap="bi")
     # Plot the pixels with max values
     # ax = sns.heatmap(class_map)
 
