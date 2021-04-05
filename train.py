@@ -87,11 +87,10 @@ def main():
     learning_rate = 0.03
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
     # transforms.CenterCrop(224),
-    transform = transforms.Compose([transforms.Resize((64, 64)),
+    transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=10, shuffle=True)
-                                          
     
     for epoch in range(args.epochs):
         if (epoch % 1000 == 0):
@@ -112,11 +111,22 @@ def main():
         print("--- %s seconds ---" % (time.time() - start_time))
 
 
+
     images, labels = next(iter(dataloader))
     enc, dec = wnet(images.cuda())
     # print(images.shape)
     # print(enc.shape)
     # print(dec.shape)
+
+#     show_image(enc[0, :, :, :].detach())
+#     segment1 = enc[0, 0, :, :].detach()
+#     segment2 = enc[0, 1, :, :].detach()
+#     segment3 = enc[0, 2, :, :].detach()
+#     segment4 = enc[0, 3, :, :].detach()
+#     torch.save(segment1, 'segment1.pt')
+#     torch.save(segment2, 'segment2.pt')
+#     torch.save(segment3, 'segment3.pt')
+#     torch.save(segment4, 'segment4.pt')
 
     torch.save(wnet.state_dict(), "model")
     np.save("rec_losses", n_cut_losses_avg)
