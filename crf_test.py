@@ -41,37 +41,39 @@ def main():
     args = parser.parse_args()
     model = WNet.WNet(args.squeeze)
 
-    model.load_state_dict(torch.load(args.model))
+    model.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
     model.eval()
 
     transform = transforms.Compose([transforms.Resize((224, 224)),
                                     transforms.ToTensor()])
 
-    orimg = Image.open(args.image).convert('RGB')
-    x = transform(orimg)[None, :, :, :]
+    img = Image.open(args.image).convert('RGB')
+    x = transform(img)[None, :, :, :]
 
     enc, dec = model(x)
     show_image(x[0])
     show_image(enc[0, :1, :, :].detach())
-    show_image(dec[0, :, :, :].detach())
+    # show_image(torch.argmax(enc[:,:,:,:], dim=1))
+    # show_image(dec[0, :, :, :].detach())
     # now put enc in crf
     segment = enc[0, :, :, :].detach()
     # put in tensor here?
+
+    orimg = imread("data2/images/train/8049.jpg")
     img = resize(orimg, (224, 224))
-    Q = dense_crf(img, segment)
+    Q = dense_crf(img, segment.numpy())
 
-    print(Q)
+    print(type(Q))
+    Q = np.argmax(Q, axis=0)
+    print(len(Q))
 
-    sns.heatmap(Q[0], cmap="cubehelix")
-    plt.show()
-    sns.heatmap(Q[1], cmap="cubehelix")
-    plt.show()
-    sns.heatmap(Q[2], cmap="cubehelix")
-    plt.show()
-    sns.heatmap(Q[3], cmap="cubehelix")
+    sns.heatmap(Q, cmap="cubehelix")
     plt.show()
 
 
+    print(np.unique(Q))
+    plt.imshow(Q)
+    plt.show()
 
 if __name__ == '__main__':
     main()

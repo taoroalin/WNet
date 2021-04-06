@@ -17,13 +17,13 @@ import numpy as np
 #   (b) disassociation: sum(weight_connection) * P(first pixel is in the class)
 #   N Cut loss = disassociation / association
 
-def soft_n_cut_loss(inputs, segmentations):
+def soft_n_cut_loss(inputs, segmentations, K, img_shape):
     # We don't do n_cut_loss batch wise -- split it up and do it instance wise
     loss = 0
     for i in range(inputs.shape[0]):
         flatten_image = torch.mean(inputs[i], dim=0)
         flatten_image = flatten_image.reshape(flatten_image.shape[0]**2)
-        loss += soft_n_cut_loss_(flatten_image, segmentations[i], 4, 64, 64)
+        loss += soft_n_cut_loss_(flatten_image, segmentations[i], K, img_shape[0], img_shape[1])
     loss = loss / inputs.shape[0]
     return loss
 
