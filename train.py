@@ -19,7 +19,7 @@ import WNet
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='PyTorch Unsupervised Segmentation with WNet')
-parser.add_argument('--name', metavar='name', default=str(datetime.datetime()), type=int,
+parser.add_argument('--name', metavar='name', default=str(datetime.date.today()), type=str,
                     help='Name of model')
 parser.add_argument('--in_Chans', metavar='C', default=3, type=int, 
                     help='number of input channels')
@@ -89,12 +89,14 @@ def main():
 
     # Squeeze k
     k = args.squeeze
+    img_size = (64, 64)
     wnet = WNet.WNet(k)
-    wnet = wnet # .cuda()
+    if(CUDA):
+        wnet = wnet.cuda()
     learning_rate = 0.03
     optimizer = torch.optim.SGD(wnet.parameters(), lr=learning_rate)
     # transforms.CenterCrop(224),
-    transform = transforms.Compose([transforms.Resize((64, 64)),
+    transform = transforms.Compose([transforms.Resize(img_size),
                                 transforms.ToTensor()])
     dataset = datasets.ImageFolder(args.input_folder, transform=transform)
 
@@ -123,9 +125,9 @@ def main():
 
             # Train Wnet with CUDA if available
             if CUDA:
-                wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], k, (64, 64)).cuda()
-            else:
-                wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0], k, (64, 64))
+                batch[0] = batch[0].cuda()
+            
+            wnet, n_cut_loss, rec_loss = train_op(wnet, optimizer, batch[0].cuda(), k, img_size)
 
             n_cut_losses.append(n_cut_loss.detach())
             rec_losses.append(rec_loss.detach())
