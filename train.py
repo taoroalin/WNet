@@ -61,6 +61,7 @@ def train_op(model, optimizer, input, psi=0.5):
 def reconstruction_loss(x, x_prime):
     # binary_cross_entropy = F.binary_cross_entropy(x_prime, x, reduction='sum')
     # return binary_cross_entropy
+    #m = nn.Sigmoid()
     criterionIdt = torch.nn.L1Loss() #prob l2 or mseless here
     rec_loss = criterionIdt(x_prime, x)
     return rec_loss
@@ -112,15 +113,14 @@ def main():
         print("--- %s seconds ---" % (time.time() - start_time))
 
 
-    images, labels = next(iter(dataloader))
     enc, dec = wnet(images.cuda())
     # print(images.shape)
     # print(enc.shape)
     # print(dec.shape)
 
     torch.save(wnet.state_dict(), "model")
-    np.save("rec_losses", n_cut_losses_avg)
-    np.save("n_cut_losses", rec_losses_avg)
+    np.save("n_cut_losses", n_cut_losses_avg)
+    np.save("rec_losses", rec_losses_avg)
     print("Done")
 
 if __name__ == '__main__':
