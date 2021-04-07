@@ -52,14 +52,15 @@ def main():
 
     enc, dec = model(x)
     show_image(x[0])
-    show_image(enc[0, :1, :, :].detach())
+    # TODO: torch sum/ stack?
+    show_image(enc[0, :, :, :].detach())
     # show_image(torch.argmax(enc[:,:,:,:], dim=1))
     # show_image(dec[0, :, :, :].detach())
     # now put enc in crf
     segment = enc[0, :, :, :].detach()
     # put in tensor here?
 
-    orimg = imread("data2/images/train/8049.jpg")
+    orimg = imread("data2/images/train/1head.png")
     img = resize(orimg, (224, 224))
     Q = dense_crf(img, segment.numpy())
 

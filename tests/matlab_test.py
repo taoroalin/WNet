@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load a matlab file
-x = loadmat('data/groundTruth/train/8049.mat')
+x = loadmat('../data/groundTruth/train/8049.mat')
 
 # Get the amount of classes, amount of pixel rows and amount of pixel columns
 amountClasses = len(x['groundTruth'][0])
