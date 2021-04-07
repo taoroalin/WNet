@@ -44,16 +44,16 @@ def main():
     model.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
     model.eval()
 
-    transform = transforms.Compose([transforms.Resize((224, 224)),
+    transform = transforms.Compose([transforms.Resize((64, 64)),
                                     transforms.ToTensor()])
 
-    img = Image.open(args.image).convert('RGB')
+    img = Image.open("data2/images/train/1head.png").convert('RGB')
     x = transform(img)[None, :, :, :]
 
     enc, dec = model(x)
     show_image(x[0])
     # TODO: torch sum/ stack?
-    show_image(enc[0, :, :, :].detach())
+    show_image(enc[0, :3, :, :].detach())
     # show_image(torch.argmax(enc[:,:,:,:], dim=1))
     # show_image(dec[0, :, :, :].detach())
     # now put enc in crf
@@ -61,16 +61,12 @@ def main():
     # put in tensor here?
 
     orimg = imread("data2/images/train/1head.png")
-    img = resize(orimg, (224, 224))
+    img = resize(orimg, (64, 64))
     Q = dense_crf(img, segment.numpy())
 
     print(type(Q))
     Q = np.argmax(Q, axis=0)
     print(len(Q))
-
-    sns.heatmap(Q, cmap="cubehelix")
-    plt.show()
-
 
     print(np.unique(Q))
     plt.imshow(Q)
