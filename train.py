@@ -19,7 +19,7 @@ import WNet
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='PyTorch Unsupervised Segmentation with WNet')
-parser.add_argument('--name', metavar='name', default=str(datetime.date.today()), type=str,
+parser.add_argument('--name', metavar='name', default=str(datetime.datetime.now().strftime('%Y%m%d%H%M%S')), type=str,
                     help='Name of model')
 parser.add_argument('--in_Chans', metavar='C', default=3, type=int, 
                     help='number of input channels')
@@ -141,9 +141,9 @@ def main():
 
     # Run wnet with cuda if enabled
     if CUDA:
-        enc, dec = wnet(images).cuda()
-    else:
-        enc, dec = wnet(images)
+        images = images.cuda()
+
+    enc, dec = wnet(images)
 
     torch.save(wnet.state_dict(), "model_" + args.name)
     np.save("losses_output/n_cut_losses_" + args.name, n_cut_losses_avg)

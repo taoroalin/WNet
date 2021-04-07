@@ -46,16 +46,17 @@ def main():
     model.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
     model.eval()
 
-    transform = transforms.Compose([transforms.Resize((64, 64)),
+    transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ToTensor()])
 
     image = Image.open(args.image).convert('RGB')
     x = transform(image)[None, :, :, :]
 
     enc, dec = model(x)
-    segment_lines = enc[0, 0, :, :].detach() + enc[0, 1, :, :].detach() + enc[0, 2, :, :].detach() + enc[0, 3, :, :].detach()
+    segment_lines = enc[0, 0, :, :] + enc[0, 1, :, :] + enc[0, 2, :, :] + enc[0, 3, :, :]
     show_image(x[0])
-    show_image(torch.argmax(enc[:, :,:,:], dim=1))
+    plt.imshow(segment_lines.detach())
+    plt.show()
     show_image(dec[0, :, :, :].detach())
 
 if __name__ == '__main__':
