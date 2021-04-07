@@ -21,6 +21,7 @@ def EncoderTest(verbose=True):
     if verbose:
         print('Passed Encoder Test with var=%s and mean=%s' % (var, mean))
     return encoded
+
 def DecoderTest():
     shape=(2, 4, 224, 224)
     out_shape=(2, 3, 224, 224)
@@ -31,6 +32,7 @@ def DecoderTest():
     var=torch.var(decoded)
     mean=torch.mean(decoded)
     print('Passed Decoder Test with var=%s and mean=%s' % (var, mean))
+
 def WNetTest():
     encoded=EncoderTest(verbose=False)
     decoder=WNet.UDec(4)
@@ -38,12 +40,15 @@ def WNetTest():
     var=torch.var(reproduced)
     mean=torch.mean(reproduced)
     print('Passed Decoder Test with var=%s and mean=%s' % (var, mean))
+
 def TrainTest():
     pass
+
 def AllTest():
     EncoderTest()
     DecoderTest()
     WNetTest()
     TrainTest()
     print('WNet Passed All Tests!')
+
 AllTest()
