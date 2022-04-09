@@ -36,8 +36,8 @@ horizontal_sobel=torch.nn.Parameter(torch.from_numpy(np.array([[[[1,   1,  1],
                                               [-1 ,-1, -1]]]])).float().cuda(), requires_grad=False)
 
 def gradient_regularization(softmax, device='cuda'):
-    vert=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
-    hori=torch.cat([F.conv2d(softmax[:, i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
+    vert=torch.cat([F.conv2d(softmax[i].unsqueeze(1), vertical_sobel) for i in range(softmax.shape[0])], 1)
+    hori=torch.cat([F.conv2d(softmax[i].unsqueeze(1), horizontal_sobel) for i in range(softmax.shape[0])], 1)
     print('vert', torch.sum(vert))
     print('hori', torch.sum(hori))
     mag=torch.pow(torch.pow(vert, 2)+torch.pow(hori, 2), 0.5)
